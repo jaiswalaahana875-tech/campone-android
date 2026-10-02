@@ -1,0 +1,44 @@
+name: Build CampOne APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Extract CampOne project
+        run: |
+          mkdir -p campone
+          unzip -q CampOne_Phone_Build.zip -d campone
+
+      - name: Find Android project
+        run: |
+          echo "Searching for Gradle project..."
+          find campone -name gradlew -type f
+
+      - name: Build APK
+        run: |
+          PROJECT_DIR=$(dirname "$(find campone -name gradlew -type f | head -n 1)")
+          echo "Project directory: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Find APK
+        run: |
+          find campone -name "*.apk" -type f
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: CampOne-APK
+          path: campone/**/*.apk
+          if-no-files-found: error
